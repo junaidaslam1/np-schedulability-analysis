@@ -157,6 +157,8 @@ When analyzing a job set with **dense-time parameters** (i.e., time values speci
 
 To use the multiprocessor analysis, use the `-m` option. 
 
+To use the heterogeneous analysis, use the `-R hetero` option.
+
 See the builtin help (`nptest -h`) for further options.
 
 ### Global Multiprocessor Analysis
