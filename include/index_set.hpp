@@ -29,6 +29,7 @@ namespace NP {
 					the_set[i] = a.contains(i) ^ b.contains(i);
 			}
 
+			/* This checks contents of jobset to be same in same order as well */
 			bool operator==(const Index_set &other) const
 			{
 				return the_set == other.the_set;

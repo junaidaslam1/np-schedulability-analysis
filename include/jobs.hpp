@@ -9,6 +9,8 @@
 
 #include "time.hpp"
 
+#define NO_resource_type	999999999
+
 namespace NP {
 
 	typedef std::size_t hash_value_t;
@@ -34,7 +36,10 @@ namespace NP {
 		}
 	};
 
-	template<class Time> class Job {
+	template<class Time>
+
+	class Job
+	{
 
 	public:
 		typedef std::vector<Job<Time>> Job_set;
@@ -46,9 +51,11 @@ namespace NP {
 		Time deadline;
 		Priority priority;
 		JobID id;
+		unsigned int resource_type;
 		hash_value_t key;
 
-		void compute_hash() {
+		void compute_hash()
+		{
 			auto h = std::hash<Time>{};
 			key = h(arrival.from());
 			key = (key << 4) ^ h(id.task);
@@ -65,11 +72,15 @@ namespace NP {
 		Job(unsigned long id,
 			Interval<Time> arr, Interval<Time> cost,
 			Time dl, Priority prio,
-			unsigned long tid = 0)
+			unsigned long tid = 0, unsigned int inresource_type = NO_resource_type)
 		: arrival(arr), cost(cost),
-		  deadline(dl), priority(prio), id(id, tid)
+		  deadline(dl), priority(prio), id(id, tid), resource_type(inresource_type)
 		{
 			compute_hash();
+		}
+
+		unsigned int get_resource_type() const {
+			return resource_type;
 		}
 
 		hash_value_t get_key() const

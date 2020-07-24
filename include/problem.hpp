@@ -13,6 +13,7 @@ namespace NP {
 
 		typedef typename Job<Time>::Job_set Workload;
 		typedef typename std::vector<Abort_action<Time>> Abort_actions;
+		typedef typename std::vector<uint32_t> NodesPerNodeType;
 
 		// ** Description of the workload:
 		// (1) a set of jobs
@@ -21,6 +22,8 @@ namespace NP {
 		Precedence_constraints dag;
 		// (3) abort actions for (some of) the jobs
 		Abort_actions aborts;
+		// (4) Vector showing number of nodes per computing node type.
+		NodesPerNodeType nodes_per_node_type;
 
 		// ** Platform model:
 		// on how many (identical) processors are the jobs being
@@ -39,13 +42,17 @@ namespace NP {
 		}
 
 		// Full constructor with abort actions
-		Scheduling_problem(Workload jobs, Precedence_constraints dag,
-		                   Abort_actions aborts,
-		                   unsigned int num_processors)
+		Scheduling_problem( Workload jobs,
+							Precedence_constraints dag,
+		                    Abort_actions aborts,
+		                    unsigned int num_processors,
+							NodesPerNodeType inVector
+						  )
 		: num_processors(num_processors)
 		, jobs(jobs)
 		, dag(dag)
 		, aborts(aborts)
+		, nodes_per_node_type(inVector)
 		{
 			assert(num_processors > 0);
 			validate_prec_refs<Time>(dag, jobs);
@@ -86,12 +93,18 @@ namespace NP {
 		// of the main workload index be?
 		std::size_t num_buckets;
 
+		// Do we want to perform heterogeneous analysis?
+		// If the file format is correct and input argument specifies hetero
+		// then set it to true else false.
+		bool heterogeneous;
+
 		Analysis_options()
 		: timeout(0)
 		, max_depth(0)
 		, early_exit(true)
 		, num_buckets(1000)
 		, be_naive(false)
+		, heterogeneous(false)
 		{
 		}
 	};

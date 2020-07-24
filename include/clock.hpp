@@ -2,6 +2,7 @@
 #define CLOCK_HPP
 
 #include <time.h>
+#include <unistd.h>
 
 class Processor_clock {
 

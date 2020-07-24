@@ -75,7 +75,9 @@ template<class T> class Interval {
 
 	bool disjoint(const Interval<T>& other) const
 	{
-		return other.until() < from() || until() < other.from();
+		T Delta = 0;//1000; // 1 Millisecond
+		return (std::max(other.from(), from()) - std::min(other.until(), until())) > Delta; // JATW
+//		return other.until() < from() || until() < other.from(); // Old
 	}
 
 	bool intersects(const Interval<T>& other) const
@@ -150,7 +152,8 @@ template<class T> std::ostream& operator<< (std::ostream& stream, const Interval
 
 
 
-template<class T, class X, Interval<T> (*map)(const X&)> class Interval_lookup_table {
+template<class T, class X, Interval<T> (*map)(const X&)>
+class Interval_lookup_table {
 	typedef std::vector<std::reference_wrapper<const X>> Bucket;
 
 	private:
@@ -159,7 +162,6 @@ template<class T, class X, Interval<T> (*map)(const X&)> class Interval_lookup_t
 	const Interval<T> range;
 	const T width;
 	const unsigned int num_buckets;
-
 
 	public:
 
@@ -191,6 +193,14 @@ template<class T, class X, Interval<T> (*map)(const X&)> class Interval_lookup_t
 		assert(b < num_buckets);
 		for (auto i = a; i <= b; i++)
 			buckets[i].push_back(x);
+	}
+
+	std::size_t size(void) const {
+		std::size_t lvSize = 0;
+		for(int i = 0; i < num_buckets; i++) {
+			lvSize += buckets[i].size();
+		}
+		return lvSize;
 	}
 
 	const Bucket& lookup(T point) const
