@@ -63,6 +63,53 @@ TEST_CASE("[global-prec] basic state evolution (RTSS18-Fig-3)") {
 	CHECK(vp.core_availability().max() == 20);
 }
 
+TEST_CASE("[global-prec] basic state evolution for ResourceType (RT) = 1; Cores of RT1 = 2") {
+	std::vector<unsigned int> nodes_per_node;
+	nodes_per_node.push_back(0); // Default RT0; RT0 is reserved for future
+	nodes_per_node.push_back(2); // RT1 = 2 Cores
+	NP::Global::Schedule_state<dtime_t> init(3, nodes_per_node);
+
+	CHECK(init.core_availability(1).min() == 0);
+	CHECK(init.core_availability(1).max() == 0);
+
+	NP::Global::Schedule_state<dtime_t> v1{init, 1, {}, {0, 0}, {5, 15}, 0, 1};
+
+	CHECK(v1.core_availability(1).min() == 0);
+	CHECK(v1.core_availability(1).max() == 0);
+
+	NP::Global::Schedule_state<dtime_t> vp{v1, 2, {}, {0, 0}, {12, 30}, 0, 1};
+
+	CHECK(vp.core_availability(1).min() ==  5);
+	CHECK(vp.core_availability(1).max() == 15);
+
+	CHECK(!vp.can_merge_with(init));
+	CHECK(!vp.can_merge_with(v1));
+
+	NP::Global::Schedule_state<dtime_t> v2{init, 2, {}, {0, 0}, {10, 25}, 0, 1};
+
+	CHECK(v1.core_availability(1).min() == 0);
+	CHECK(v1.core_availability(1).max() == 0);
+
+	CHECK(!v2.can_merge_with(v1));
+	CHECK(!v2.try_to_merge(v1));
+
+	NP::Global::Schedule_state<dtime_t> vq{v2, 1, {}, {0, 0}, {8, 20}, 0, 1};
+
+	CHECK(vq.core_availability(1).min() ==  8);
+	CHECK(vq.core_availability(1).max() == 20);
+
+	CHECK(vq.can_merge_with(vp));
+	CHECK(vp.can_merge_with(vq));
+
+	CHECK(vp.try_to_merge(vq));
+
+	CHECK(vq.core_availability(1).min() ==  8);
+	CHECK(vq.core_availability(1).max() == 20);
+
+	CHECK(vp.core_availability(1).min() ==  5);
+	CHECK(vp.core_availability(1).max() == 20);
+}
+
 TEST_CASE("[global] RTSS17-Fig-1a") {
 	auto in = std::istringstream(fig1a_jobs_file);
 	auto jobs = NP::parse_file<dtime_t>(in);

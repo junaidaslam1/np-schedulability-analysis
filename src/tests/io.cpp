@@ -15,6 +15,17 @@ const std::string four_lines =
 "       920,          2,              10000.0,              10010.0,   23.227497252002234,    838.6724123730141,              20000.0,                    1\n"
 "       920,          3,              20000.0,              20010.0,   23.227497252002234,    838.6724123730141,              30000.0,                    1\n";
 
+const std::string sample_hetero_jobs =
+"ResourceTypes,4\n"
+"M0,	0\n"
+"M1,	4\n"
+"M2,	1\n"
+"M3,	2\n"
+"#\n"
+"   Task ID,     Job ID,          Arrival min,          Arrival max,             Cost min,             Cost max,             Deadline,             Priority,	ResourceType\n"
+"       5,          1,                  0.0,                 10.0,   23.227497252002234,    838.6724123730141,              10000.0,                    1,		3\n"
+"       5,          2,              10000.0,              10010.0,   23.227497252002234,    838.6724123730141,              20000.0,                    1,		1\n"
+"       5,          3,              20000.0,              20010.0,   23.227497252002234,    838.6724123730141,              30000.0,                    1,		2\n";
 
 TEST_CASE("[dense time] job parser") {
 	auto in = std::istringstream(one_line);
@@ -32,7 +43,7 @@ TEST_CASE("[dense time] job parser exception") {
 	REQUIRE_THROWS_AS(NP::parse_job<dense_t>(in), std::ios_base::failure);
 }
 
-TEST_CASE("[dense time] file parser") {
+TEST_CASE("[dense time] file parser homogeneous") {
 	auto in = std::istringstream(four_lines);
 
 	auto jobs = NP::parse_file<dense_t>(in);
@@ -55,6 +66,49 @@ TEST_CASE("[dense time] file parser") {
 	CHECK(jobs[0].get_deadline() == 10000);
 	CHECK(jobs[1].get_deadline() == 20000);
 	CHECK(jobs[2].get_deadline() == 30000);
+}
+
+TEST_CASE("[dense time] file parser heterogeneous") {
+	auto jobset = std::istringstream(sample_hetero_jobs);
+
+	uint32_t lvNumberOfComputingNodetypes = 0;
+	std::vector<uint32_t> lvNumberOfNodesPerComputingNodeType;
+	uint32_t lvNumberOfTotalResources = 0;
+
+	auto lvjobs = NP::parse_file<dense_t>(
+											jobset, true,
+											&lvNumberOfComputingNodetypes,
+											&lvNumberOfNodesPerComputingNodeType,
+											&lvNumberOfTotalResources
+										 );
+
+	CHECK(lvNumberOfComputingNodetypes == 4);
+	CHECK(lvNumberOfNodesPerComputingNodeType[1] == 4);
+	CHECK(lvNumberOfNodesPerComputingNodeType[2] == 1);
+	CHECK(lvNumberOfNodesPerComputingNodeType[3] == 2);
+
+	CHECK(lvjobs.size() == 3);
+
+	for (auto j : lvjobs) {
+		CHECK(j.get_priority() == 1);
+		CHECK(j.get_task_id() == 5);
+	}
+
+	CHECK(lvjobs[0].get_job_id() == 1);
+	CHECK(lvjobs[1].get_job_id() == 2);
+	CHECK(lvjobs[2].get_job_id() == 3);
+
+	CHECK(lvjobs[0].earliest_arrival() == 00000);
+	CHECK(lvjobs[1].earliest_arrival() == 10000);
+	CHECK(lvjobs[2].earliest_arrival() == 20000);
+
+	CHECK(lvjobs[0].get_deadline() == 10000);
+	CHECK(lvjobs[1].get_deadline() == 20000);
+	CHECK(lvjobs[2].get_deadline() == 30000);
+
+	CHECK(lvjobs[0].get_resource_type() == 3);
+	CHECK(lvjobs[1].get_resource_type() == 1);
+	CHECK(lvjobs[2].get_resource_type() == 2);
 }
 
 TEST_CASE("[disc time] don't parse dense files") {

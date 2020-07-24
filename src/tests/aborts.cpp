@@ -30,12 +30,14 @@ TEST_CASE("[uni] basic aborts") {
 	auto jobs_in = std::istringstream(basic_jobs_file);
 	auto dag_in  = std::istringstream("\n");
 	auto aborts_in = std::istringstream(basic_aborts_file);
+	std::vector<uint32_t> Vector;
 
 	Scheduling_problem<dtime_t> prob{
 		parse_file<dtime_t>(jobs_in),
 		parse_dag_file(dag_in),
 		parse_abort_file<dtime_t>(aborts_in),
-		1
+		1,
+		Vector
 	};
 
 	Analysis_options opts;
@@ -84,11 +86,12 @@ TEST_CASE("[uni] abort stops DL miss cascade") {
 	}
 
 	SUBCASE("with aborts") {
+		std::vector<uint32_t> Vector;
 		Scheduling_problem<dtime_t> prob{
 			parse_file<dtime_t>(jobs_in),
 			parse_dag_file(dag_in),
 			parse_abort_file<dtime_t>(aborts_in),
-			1
+			1, Vector
 		};
 
 		auto space = Uniproc::State_space<dtime_t>::explore(prob, opts);
