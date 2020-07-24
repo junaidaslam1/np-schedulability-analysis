@@ -155,9 +155,9 @@ examples/fig1a.csv,  1,  9,  10,  9,  0,  0.000121,  848.000000,  0, 1
 
 When analyzing a job set with **dense-time parameters** (i.e., time values specified as floating-point numbers), the option `-t dense` **must** be passed. 
 
-To use the multiprocessor analysis, use the `-m` option. 
+To use the homogeneous multiprocessor analysis, use the `-m` option. 
 
-To use the heterogeneous analysis, use the `-R hetero` option.
+To use the heterogeneous platform analysis, use the `-R hetero` option.
 
 See the builtin help (`nptest -h`) for further options.
 
