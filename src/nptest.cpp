@@ -20,7 +20,7 @@
 #include "global/space.hpp"
 #include "io.hpp"
 #include "clock.hpp"
-
+#include "signal.h"
 
 #define MAX_PROCESSORS 512
 
@@ -49,6 +49,8 @@ static bool want_rta_file;
 
 static bool continue_after_dl_miss = false;
 
+static bool want_heterogeneous = false;
+
 #ifdef CONFIG_PARALLEL
 static unsigned int num_worker_threads = 0;
 #endif
@@ -72,13 +74,24 @@ static Analysis_result analyze(
 	tbb::task_scheduler_init init(
 		num_worker_threads ? num_worker_threads : tbb::task_scheduler_init::automatic);
 #endif
+	uint32_t lvNumberOfComputingNodetypes = 0;
+	std::vector<uint32_t> lvNumberOfNodesPerComputingNodeType;
+	uint32_t	lvNumberOfTotalResources = 0;
 
-	// Parse input files and create NP scheduling problem description
-	NP::Scheduling_problem<Time> problem{
-		NP::parse_file<Time>(in),
+	// Extracting job set file contents
+	NP::Scheduling_problem<Time> problem {
+		NP::parse_file<Time>(
+								in,
+								want_heterogeneous,
+								&lvNumberOfComputingNodetypes,
+								&lvNumberOfNodesPerComputingNodeType,
+								&lvNumberOfTotalResources
+							),
 		NP::parse_dag_file(dag_in),
 		NP::parse_abort_file<Time>(aborts_in),
-		num_processors};
+		((want_multiprocessor) ? num_processors : lvNumberOfTotalResources),
+		lvNumberOfNodesPerComputingNodeType
+	};
 
 	// Set common analysis options
 	NP::Analysis_options opts;
@@ -87,6 +100,11 @@ static Analysis_result analyze(
 	opts.early_exit = !continue_after_dl_miss;
 	opts.num_buckets = problem.jobs.size();
 	opts.be_naive = want_naive;
+	if(want_heterogeneous && (lvNumberOfComputingNodetypes > 0)) {
+		opts.heterogeneous = true;
+	} else {
+		opts.heterogeneous = false;
+	}
 
 	// Actually call the analysis engine
 	auto space = Space::explore(problem, opts);
@@ -134,9 +152,9 @@ static Analysis_result process_stream(
 	std::istream &dag_in,
 	std::istream &aborts_in)
 {
-	if (want_multiprocessor && want_dense)
+	if ((want_multiprocessor || want_heterogeneous) && want_dense)
 		return analyze<dense_t, NP::Global::State_space<dense_t>>(in, dag_in, aborts_in);
-	else if (want_multiprocessor && !want_dense)
+	else if ((want_multiprocessor || want_heterogeneous) && !want_dense)
 		return analyze<dtime_t, NP::Global::State_space<dtime_t>>(in, dag_in, aborts_in);
 	else if (want_dense && want_prm_iip)
 		return analyze<dense_t, NP::Uniproc::State_space<dense_t, NP::Uniproc::Precatious_RM_IIP<dense_t>>>(in, dag_in, aborts_in);
@@ -175,7 +193,6 @@ static void process_file(const std::string& fname)
 		std::istream &aborts_in = want_aborts ?
 			static_cast<std::istream&>(aborts_stream) :
 			static_cast<std::istream&>(empty_aborts_stream);
-
 		if (fname == "-")
 			result = process_stream(std::cin, dag_in, aborts_in);
 		else {
@@ -231,7 +248,7 @@ static void process_file(const std::string& fname)
 		std::cerr << fname;
 		if (want_precedence)
 			std::cerr << " + " << precedence_file;
-		std::cerr <<  ": parse error" << std::endl;
+		std::cerr <<  ": parse error, Check file format" << std::endl;
 		exit(1);
 	} catch (NP::InvalidJobReference& ex) {
 		std::cerr << precedence_file << ": bad job reference: job "
@@ -329,10 +346,21 @@ int main(int argc, char** argv)
 	      .help("do not abort the analysis on the first deadline miss "
 	            "(default: off)");
 
+	parser.add_option("-R", "--Resource").dest("resource_types")
+			.metavar("RESOURCE-TYPES")
+			.choices({"hetero", "homo"}).set_default("homo")
+			.help("choose 'hetero' or 'homo' "
+					"(default=heterogeneous)");
 
 	auto options = parser.parse_args(argc, argv);
 
+	const std::string& hetero_resource = options.get("resource_types");
+	if(hetero_resource == "hetero") {
+		want_heterogeneous	=	true;
+	}
+
 	const std::string& time_model = options.get("time_model");
+
 	want_dense = time_model == "dense";
 
 	const std::string& iip = options.get("iip");
@@ -369,6 +397,9 @@ int main(int argc, char** argv)
 	aborts_file = (const std::string&) options.get("abort_file");
 
 	want_multiprocessor = options.is_set_by_user("num_processors");
+	if(want_multiprocessor) {
+		want_heterogeneous = false;
+	}
 	num_processors = options.get("num_processors");
 	if (!num_processors || num_processors > MAX_PROCESSORS) {
 		std::cerr << "Error: invalid number of processors\n" << std::endl;
@@ -404,8 +435,9 @@ int main(int argc, char** argv)
 	if (options.get("print_header"))
 		print_header();
 
-	for (auto f : parser.args())
+	for (auto f : parser.args()) {
 		process_file(f);
+	}
 
 	if (parser.args().empty())
 		process_file("-");
