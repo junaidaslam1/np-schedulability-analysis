@@ -157,12 +157,7 @@ When analyzing a job set with **dense-time parameters** (i.e., time values speci
 
 To use the homogeneous multiprocessor analysis, use the `-m` option. 
 
-To use the heterogeneous platform analysis, use the `-R hetero` option. For that purpose, it is important to have the job set file with proper format as shown in  `Typed_Tasks_4_Run_0_Jobs.csv` file in example folder. The command to run heteroegenous type analysis is:
-
-```
-$ build/nptest -i CW examples/fig1a.csv 
-examples/fig1a.csv,  1,  9,  10,  9,  0,  0.000121,  848.000000,  0, 1
-```
+To use the heterogeneous platform analysis, use the `-R hetero` option. 
 
 See the builtin help (`nptest -h`) for further options.
 
@@ -173,6 +168,14 @@ To run the analysis for globally scheduled multiprocessors, simply provide the n
 ```
 $ build/nptest -m 2 examples/fig1a.csv 
 examples/fig1a.csv,  1,  9,  9,  9,  1,  0.000379,  1760.000000,  0,  2
+```
+### Global Heterogeneous Analysis
+
+For this purpose, it is important to have the job set file with proper format as shown in  `Typed_Tasks_4_Run_0_Jobs.csv` file in example folder. The command to run heteroegenous type analysis is:
+
+```
+$ ./build/nptest -R hetero examples/Typed_Tasks_4_Run_0_Jobs.csv -p examples/Typed_Tasks_4_Run_0_Pred.csv
+examples/Typed_Tasks_4_Run_0_Jobs.csv,  1,  249,  1379609,  7706562,  82423,  76.832277,  211.234375,  0,  1
 ```
 
 **NOTE**: While invoking `nptest` with `-m 1` specifies a uniprocessor platform, it is *not* the same as running the uniprocessor analysis. The uniprocessor analysis (RTSS'17) is activated *in the absence* of the `-m` option; providing `-m 1` activates the multiprocessor analysis (ECRTS'18) assuming there is a single processor. 
