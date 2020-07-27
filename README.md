@@ -157,7 +157,12 @@ When analyzing a job set with **dense-time parameters** (i.e., time values speci
 
 To use the homogeneous multiprocessor analysis, use the `-m` option. 
 
-To use the heterogeneous platform analysis, use the `-R hetero` option.
+To use the heterogeneous platform analysis, use the `-R hetero` option. For that purpose, it is important to have the job set file with proper format as shown in  `Typed_Tasks_4_Run_0_Jobs.csv` file in example folder. The command to run heteroegenous type analysis is:
+
+```
+$ build/nptest -i CW examples/fig1a.csv 
+examples/fig1a.csv,  1,  9,  10,  9,  0,  0.000121,  848.000000,  0, 1
+```
 
 See the builtin help (`nptest -h`) for further options.
 
